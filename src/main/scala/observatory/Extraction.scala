@@ -24,5 +24,4 @@ object Extraction {
   def locationYearlyAverageRecords(records: Iterable[(LocalDate, Location, Temperature)]): Iterable[(Location, Temperature)] = {
     ???
   }
-
 }
