@@ -8,6 +8,11 @@ package observatory
 case class Location(lat: Double, lon: Double)
 
 /**
+  * Represents a Date to a Dataset type, actually the
+  * official returned Date is a LocalDate standard java object */
+case class Date(year: Year, month: Month, dayOfMonth: Day)
+
+/**
   * Introduced in Week 3. Represents a tiled web map tile.
   * See https://en.wikipedia.org/wiki/Tiled_web_map
   * Based on http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
