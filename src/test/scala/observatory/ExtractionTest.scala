@@ -6,8 +6,8 @@ import org.scalatest.{FunSuite, BeforeAndAfterAll}
 
 trait ExtractionTest extends FunSuite {
 
-  val stationsFile = "/Users/ronald/Documents/observatory/observatory/src/test/resources/stations.csv"
-  val tempsFile = "/Users/ronald/Documents/observatory/observatory/src/test/resources/temperatures.csv"
+  val stationsFile = "/stations.csv"
+  val tempsFile = "/temperatures.csv"
 
   val sampleResult: Iterable[(LocalDate, Location, Temperature)] = Iterable(
     (LocalDate.of(2015, 8, 11), Location(37.35, -78.433), 27.3),

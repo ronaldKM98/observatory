@@ -81,7 +81,7 @@ object Extraction {
       .option(key = "encoding", value = "UTF-8")
       .option(key = "sep", value = ",")
       .option(key = "inferSchema", value = "true")
-      .csv(path)
+      .csv(parsePath(path))
       .na.fill(0, Array("_c0", "_c1"))
       .withColumn("id", TupleUDFs.toTuple2[Int, Int].apply($"_c0", $"_c1"))
       .na.drop()
