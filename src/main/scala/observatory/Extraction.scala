@@ -5,6 +5,8 @@ import java.time.LocalDate
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.ScalaReflection.Schema
+import org.apache.spark.sql.types.{DoubleType, StructField, StructType}
 
 /**
   * 1st milestone: data extraction
@@ -27,6 +29,14 @@ object Extraction {
   // For implicit conversions, enables jumping over DF, DS and RDD APIs seamlessly.
   import spark.implicits._
 
+  // Temporary records for spark typing
+  case class RawStationRecord(stn: Int, wban: Int, lat: Double, lon: Double)
+  case class RawTemperatureRecord(stn: Int, wban: Int, month: Int, day: Int, temp: Double)
+
+  case class FormatStationRecord(id: ID, lat: Double, lon: Double)
+  case class FormatTemperatureRecord(id: ID, month: Int, day: Int, temp: Double)
+
+
   /**
     * @param year             Year number
     * @param stationsFile     Path of the stations resource file to use (e.g. "/stations.csv")
@@ -35,28 +45,23 @@ object Extraction {
     */
   def locateTemperatures(year: Year, stationsFile: String, temperaturesFile: String):
                                                                         Iterable[(LocalDate, Location, Temperature)] = {
-    val stations: DataFrame =
-      readFile(stationsFile)
-      .withColumn("lat", $"_c2")
-      .withColumn("lon", $"_c3")
+    val stationSchema: StructType = Encoders.product[RawStationRecord].schema
+    val temperatureSchema: StructType = Encoders.product[RawTemperatureRecord].schema
 
-    val temperatures: DataFrame =
-        readFile(temperaturesFile)
-      .withColumn("month", $"_c2")
-      .withColumn("day", $"_c3")
-      .withColumn("temp", $"_c4")
+    val stations: Dataset[FormatStationRecord] =
+      Extraction.readFile(stationsFile, stationSchema)
+        .select($"id", $"lat", $"lon")
+        .as[FormatStationRecord]
 
-    val joint: DataFrame =
-      stations.join(temperatures, Seq("id"))
+    val temperatures: Dataset[FormatTemperatureRecord] =
+      Extraction.readFile(temperaturesFile, temperatureSchema)
+        .select($"id", $"month", $"day", $"temp")
+        .as[FormatTemperatureRecord]
 
-    joint.
-      select($"lat", $"lon", $"month", $"day", $"temp")
-      .collect()
-      .map(row => (
-        LocalDate.of(year, row(2).asInstanceOf[Int], row(3).asInstanceOf[Int]),
-        Location(row(0).asInstanceOf[Double], row(1).asInstanceOf[Double]),
-        fahrenheitToCelsius(row(4).asInstanceOf[Temperature]))
-      )
+    val joint: Dataset[(FormatStationRecord, FormatTemperatureRecord)] =
+      stations.joinWith(temperatures, stations("id") === temperatures("id"))
+
+    joint.collect().map(x => helper(year)(x._1, x._2))
   }
 
   /**
@@ -74,20 +79,19 @@ object Extraction {
     avg.as[(Location, Temperature)].collect()
   }
 
-  def readFile(path: String): DataFrame = {
+  def readFile(path: String, schema: StructType): DataFrame = {
     spark
       .read
       .option(key = "header", value = "false")
       .option(key = "encoding", value = "UTF-8")
       .option(key = "sep", value = ",")
-      .option(key = "inferSchema", value = "true")
+      .schema(schema)
       .csv(parsePath(path))
-      .na.fill(0, Array("_c0", "_c1"))
-      .withColumn("id", TupleUDFs.toTuple2[Int, Int].apply($"_c0", $"_c1"))
+      .na.fill(0, Seq("stn", "wban"))
+      .withColumn("id", TupleUDFs.toTuple2[Int, Int].apply($"stn", $"wban"))
+      .map(_.toString())
       .na.drop()
   }
-
-  def fahrenheitToCelsius(f: Temperature): Temperature = (f - 32) / 1.80000
 
   object TupleUDFs {
     import org.apache.spark.sql.functions.udf
@@ -97,4 +101,13 @@ object Extraction {
     def toTuple2[S: TypeTag, T: TypeTag]: UserDefinedFunction =
       udf[(S, T), S, T]((x: S, y: T) => (x, y))
   }
+
+  def helper(year: Int)(location: FormatStationRecord, temperature: FormatTemperatureRecord):
+                                                              (LocalDate, Location, Temperature) = {
+    (LocalDate.of(year, temperature.month, temperature.day),
+      Location(location.lat, location.lon),
+      fahrenheitToCelsius(temperature.temp))
+  }
+
+  def fahrenheitToCelsius(f: Temperature): Temperature = double2Double((f - 32) / 1.80000)
 }
