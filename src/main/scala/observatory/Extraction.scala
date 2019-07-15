@@ -48,18 +48,19 @@ object Extraction {
     val stationSchema: StructType = Encoders.product[RawStationRecord].schema
     val temperatureSchema: StructType = Encoders.product[RawTemperatureRecord].schema
 
-    val stations: Dataset[FormatStationRecord] =
+    val stations: Dataset[RawStationRecord] =
       Extraction.readFile(stationsFile, stationSchema)
-        .select($"id", $"lat", $"lon")
-        .as[FormatStationRecord]
+        .select($"stn", $"wban", $"lat", $"lon")
+        .as[RawStationRecord]
 
-    val temperatures: Dataset[FormatTemperatureRecord] =
+    val temperatures: Dataset[RawTemperatureRecord] =
       Extraction.readFile(temperaturesFile, temperatureSchema)
-        .select($"id", $"month", $"day", $"temp")
-        .as[FormatTemperatureRecord]
+        .select($"stn", $"wban", $"month", $"day", $"temp")
+        .as[RawTemperatureRecord]
 
-    val joint: Dataset[(FormatStationRecord, FormatTemperatureRecord)] =
-      stations.joinWith(temperatures, stations("id") === temperatures("id"))
+    val joint: Dataset[(RawStationRecord, RawTemperatureRecord)] =
+      stations.joinWith(temperatures, stations("stn") === temperatures("stn") &&
+                                      stations("wban") === temperatures("wban"))
 
     joint.collect().map(x => helper(year)(x._1, x._2))
   }
@@ -89,7 +90,6 @@ object Extraction {
       .csv(parsePath(path))
       .na.fill(0, Seq("stn", "wban"))
       .withColumn("id", TupleUDFs.toTuple2[Int, Int].apply($"stn", $"wban"))
-      .map(_.toString())
       .na.drop()
   }
 
@@ -102,7 +102,7 @@ object Extraction {
       udf[(S, T), S, T]((x: S, y: T) => (x, y))
   }
 
-  def helper(year: Int)(location: FormatStationRecord, temperature: FormatTemperatureRecord):
+  def helper(year: Int)(location: RawStationRecord, temperature: RawTemperatureRecord):
                                                               (LocalDate, Location, Temperature) = {
     (LocalDate.of(year, temperature.month, temperature.day),
       Location(location.lat, location.lon),
