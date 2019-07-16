@@ -2,6 +2,7 @@ package observatory
 
 import java.time.LocalDate
 
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql._
@@ -25,6 +26,8 @@ object Extraction {
 
   @transient val sc: SparkContext = spark.sparkContext
   sc.setLogLevel("WARN")
+
+  Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
 
   // For implicit conversions, enables jumping over DF, DS and RDD APIs seamlessly.
   import spark.implicits._
