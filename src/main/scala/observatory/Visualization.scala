@@ -1,5 +1,7 @@
 package observatory
 
+import java.awt.image.BufferedImage
+
 import com.sksamuel.scrimage.{Image, Pixel}
 
 import scala.annotation.tailrec
@@ -44,7 +46,7 @@ object Visualization {
 
     def poly(x0: Temperature, y0: Int, x1: Temperature, y1: Int, x: Temperature): Int = {
       if (x0 == x1) y0
-      else math.floor((y0 * (x1 - x) + y1 * (x - x0)) / (x1 - x0)).toInt
+      else math.round((y0 * (x1 - x) + y1 * (x - x0)) / (x1 - x0)).toInt
     }
 
     val sortedPoints = points.toList.sortBy(_._1).reverse
@@ -66,16 +68,14 @@ object Visualization {
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
     val pixels: Array[Pixel] =
       (for {
-        i <- temperatures
-        y <- 0 until 180
-        x <- 0 until 360
-        temp = predictTemperature(temperatures, Location(x, y))
+        //i <- 0 until 360 * 180
+        lat <- 90 to -89
+        lon <- -180 to 179
+        temp = predictTemperature(temperatures, Location(lat, lon))
         color = interpolateColor(colors, temp)
-      } yield Pixel.apply(color.red, color.green, color.blue, 1)).toArray
+      } yield Pixel(color.red, color.green, color.blue, 255)).toArray
 
-    val img = Image.apply(360, 180, pixels)
-    img.output(new java.io.File("target/some-image.png"))
-    img
+    Image(360, 180, pixels, BufferedImage.TYPE_INT_RGB)
   }
 
   /**
@@ -101,9 +101,8 @@ object Visualization {
     val omega = {
       if (x_lat == xi_lat) 0
       else if (antipodes(x, xi)) math.Pi
-      else math.acos(
-        math.sin(x_lat) * math.sin(xi_lat) + math.cos(x_lat) * math.cos(xi_lat) * math.cos(delta_lon)
-      )
+      else
+        math.acos(math.sin(x_lat) * math.sin(xi_lat) + math.cos(x_lat) * math.cos(xi_lat) * math.cos(delta_lon))
     }
 
     radius * omega
@@ -126,7 +125,8 @@ object Visualization {
   }
 
   /**
-    * Helper functions for visualize
+    * Helper functions for interpolateColor
     */
 
+  def outputImage(image: Image, file: java.io.File): Unit = image output file
 }

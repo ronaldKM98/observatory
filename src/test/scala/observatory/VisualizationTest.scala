@@ -9,7 +9,7 @@ trait VisualizationTest extends FunSuite with Checkers {
 
   implicit val doubleEquality = TolerantNumerics.tolerantDoubleEquality(0.01)
 
-  val values: Iterable[(Temperature, Color)] = Iterable(
+  val colors: Iterable[(Temperature, Color)] = Iterable(
     (32, Color(255, 0, 0)),
     (60, Color(255, 255, 255)),
     (-15, Color(0, 0, 255)),
@@ -27,12 +27,12 @@ trait VisualizationTest extends FunSuite with Checkers {
   }
 
   test("interpolateColor") {
-    assert(Visualization.interpolateColor(values, 32) === Color(255, 0, 0))
+    assert(Visualization.interpolateColor(colors, 32) === Color(255, 0, 0))
   }
 
   test("indexes helper function") {
     assert(
-      Visualization.indexes(values.toList.sortBy(_._1).reverse, values.head, values.head, 18)
+      Visualization.indexes(colors.toList.sortBy(_._1).reverse, colors.head, colors.head, 18)
         === (( (32, Color(255, 0, 0)), (12, Color(255, 255, 0))))
     )
   }

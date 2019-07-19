@@ -113,4 +113,6 @@ object Extraction {
   }
 
   def fahrenheitToCelsius(f: Temperature): Temperature = double2Double((f - 32) / 1.80000)
+
+  def stop(): Unit = spark.stop()
 }

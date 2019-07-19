@@ -2,7 +2,8 @@ package observatory
 
 import java.time.LocalDate
 
-import org.scalatest.{FunSuite, BeforeAndAfterAll}
+import org.scalactic.TolerantNumerics
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 trait ExtractionTest extends FunSuite {
 
@@ -19,6 +20,8 @@ trait ExtractionTest extends FunSuite {
     (Location(37.35, -78.433), 27.3),
     (Location(37.358, -78.438), 1.0)
   )
+
+  def colorDistance(a: Color, b: Color): Int = math.abs(a.red - b.red) + math.abs(a.green - b.green) + math.abs(a.blue - b.blue)
 
   test("locateTemperatures") {
     assert(Extraction.locateTemperatures(2015, stationsFile, tempsFile).size === sampleResult.size)
