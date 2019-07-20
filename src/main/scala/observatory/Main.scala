@@ -23,5 +23,4 @@ object Main extends App {
   val image = Visualization.visualize(avgs, values)
 
   Visualization.outputImage(image, new java.io.File("target/mapa.png"))
-
 }

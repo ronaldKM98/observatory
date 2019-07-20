@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage
 import com.sksamuel.scrimage.{Image, Pixel}
 
 import scala.annotation.tailrec
+import scala.language.postfixOps
 
 /**
   * 2nd milestone: basic visualization
@@ -66,14 +67,12 @@ object Visualization {
     * @return A 360×180 image where each pixel shows the predicted temperature at its location
     */
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
-    val pixels: Array[Pixel] =
-      (for {
-        //i <- 0 until 360 * 180
-        lat <- 90 to -89
-        lon <- -180 to 179
-        temp = predictTemperature(temperatures, Location(lat, lon))
-        color = interpolateColor(colors, temp)
-      } yield Pixel(color.red, color.green, color.blue, 255)).toArray
+    val pixels: Array[Pixel] = (for {
+      i <- Stream.range(0, 360 * 180).par
+      loc = index2Location(i, 360)
+      temp = predictTemperature(temperatures, loc)
+      color = interpolateColor(colors, temp)
+    } yield Pixel(color.red, color.green, color.blue, 255)).toArray
 
     Image(360, 180, pixels, BufferedImage.TYPE_INT_RGB)
   }
@@ -125,8 +124,18 @@ object Visualization {
   }
 
   /**
-    * Helper functions for interpolateColor
+    * Helper functions for visualize
     */
 
   def outputImage(image: Image, file: java.io.File): Unit = image output file
+
+  def index2Location(index: Int, rowWidth: Int): Location = {
+    val rowIndex: Double = index / rowWidth
+    val colIndex: Double = index - (rowIndex * rowWidth)
+
+    val latitude: Double = if (rowIndex <= 90) 90 - rowIndex else (rowIndex - 90) * -1
+    val longitude: Double = if (colIndex <= 180) colIndex - 180 else colIndex - 180
+
+    Location(latitude, longitude)
+  }
 }
