@@ -44,7 +44,6 @@ object Visualization {
     * @return The color that corresponds to `value`, according to the color scale defined by `points`
     */
   def interpolateColor(points: Iterable[(Temperature, Color)], value: Temperature): Color = {
-
     def poly(x0: Temperature, y0: Int, x1: Temperature, y1: Int, x: Temperature): Int = {
       if (x0 == x1) y0
       else math.round((y0 * (x1 - x) + y1 * (x - x0)) / (x1 - x0)).toInt
@@ -68,7 +67,7 @@ object Visualization {
     */
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
     val pixels: Array[Pixel] = (for {
-      i <- Stream.range(0, 360 * 180).par
+      i <- Stream.range(0, 360 * 180)
       loc = index2Location(i, 360)
       temp = predictTemperature(temperatures, loc)
       color = interpolateColor(colors, temp)

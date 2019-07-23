@@ -1,6 +1,10 @@
 package observatory
 
+import java.awt.image.BufferedImage
+
 import com.sksamuel.scrimage.{Image, Pixel}
+
+import scala.collection.parallel.immutable.ParSeq
 
 /**
   * 3rd milestone: interactive visualization
@@ -12,7 +16,7 @@ object Interaction {
     * @return The latitude and longitude of the top-left corner of the tile, as per http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
     */
   def tileLocation(tile: Tile): Location = {
-    ???
+    tile.toLocation
   }
 
   /**
@@ -21,8 +25,27 @@ object Interaction {
     * @param tile Tile coordinates
     * @return A 256×256 image showing the contents of the given tile
     */
-  def tile(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)], tile: Tile): Image = {
-    ???
+  def tile(temperatures: Iterable[(Location, Temperature)],
+           colors: Iterable[(Temperature, Color)], tile: Tile): Image = {
+    val width = 256
+    val height = 256
+    val alpha = 127
+    val x_0 = tile.x * width
+    val y_0 = tile.y * height
+
+    val stream = (for {
+      k <- y_0 until y_0 + height
+      j <- x_0 until x_0 + width
+    } yield (j, k)).toStream.par
+
+    val pixels: Array[Pixel] = (for {
+      (j, k) <- stream
+      loc = Tile(j, k, tile.zoom + 8).toLocation
+      temp = Visualization.predictTemperature(temperatures, loc)
+      color = Visualization.interpolateColor(colors, temp)
+    } yield Pixel(color.red, color.green, color.blue, alpha)).toArray
+
+    Image(width, height, pixels, BufferedImage.TYPE_INT_RGB)
   }
 
   /**
@@ -32,11 +55,14 @@ object Interaction {
     * @param generateImage Function that generates an image given a year, a zoom level, the x and
     *                      y coordinates of the tile and the data to build the image from
     */
-  def generateTiles[Data](
-    yearlyData: Iterable[(Year, Data)],
-    generateImage: (Year, Tile, Data) => Unit
-  ): Unit = {
+  def generateTiles[Data](yearlyData: Iterable[(Year, Data)],
+    generateImage: (Year, Tile, Data) => Unit): Unit = {
     ???
   }
 
+  def writeImage[Data](year: Year, tile: Tile, data: Data): Unit = {
+    val file: java.io.File =
+      new java.io.File(s"target/temperatures/$year/${tile.zoom}/${tile.x}-${tile.y}.png")
+    ???
+  }
 }
