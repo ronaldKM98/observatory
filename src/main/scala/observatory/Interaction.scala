@@ -13,7 +13,8 @@ object Interaction {
 
   /**
     * @param tile Tile coordinates
-    * @return The latitude and longitude of the top-left corner of the tile, as per http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
+    * @return The latitude and longitude of the top-left corner of the tile,
+    *         as per http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
     */
   def tileLocation(tile: Tile): Location = {
     tile.toLocation
@@ -55,14 +56,20 @@ object Interaction {
     * @param generateImage Function that generates an image given a year, a zoom level, the x and
     *                      y coordinates of the tile and the data to build the image from
     */
-  def generateTiles[Data](yearlyData: Iterable[(Year, Data)],
-    generateImage: (Year, Tile, Data) => Unit): Unit = {
+  def generateTiles[Data](yearlyData: Iterable[(Year, Data)], generateImage: (Year, Tile, Data) => Unit): Unit = {
     ???
   }
 
-  def writeImage[Data](year: Year, tile: Tile, data: Data): Unit = {
+  /**
+    * Helper function to save the generated image to the file system with the required format
+    * @param year year of the temperatures in the image
+    * @param tile corresponding tile of type Tile of the image
+    * @param image This is the output of the tile method above
+    */
+  def writeImage(year: Year, tile: Tile, image: Image): Unit = {
     val file: java.io.File =
       new java.io.File(s"target/temperatures/$year/${tile.zoom}/${tile.x}-${tile.y}.png")
-    ???
+
+    image output file
   }
 }

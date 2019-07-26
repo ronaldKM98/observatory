@@ -21,11 +21,9 @@ case class Date(year: Year, month: Month, dayOfMonth: Day)
   * @param zoom Zoom level, 0 ≤ zoom ≤ 19
   */
 case class Tile(x: Int, y: Int, zoom: Int) {
-  def toLocation: Location =
-    Location(
+  def toLocation: Location = Location(
       math.toDegrees(math.atan(math.sinh(math.Pi * (1.0 - 2.0 * y.toDouble / (1 << zoom))))),
-      x.toDouble / (1 << zoom) * 360.0 - 180.0
-    )
+      x.toDouble / (1 << zoom) * 360.0 - 180.0)
 }
 
 /**
