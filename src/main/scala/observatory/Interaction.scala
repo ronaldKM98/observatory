@@ -70,6 +70,10 @@ object Interaction {
     val file: java.io.File =
       new java.io.File(s"target/temperatures/$year/${tile.zoom}/${tile.x}-${tile.y}.png")
 
+    if (!file.getParentFile.exists) file.getParentFile.mkdirs
+
     image output file
   }
+
+
 }

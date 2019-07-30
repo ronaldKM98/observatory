@@ -2,6 +2,9 @@ package observatory
 
 import java.io.File
 import java.nio.file.Paths
+import java.time.LocalDate
+
+import com.sksamuel.scrimage.Image
 
 object Main extends App {
 
@@ -23,28 +26,6 @@ object Main extends App {
     (-60, Color(0, 0, 0))
   )
 
-  /**
-  val tempsFile = "/1975.csv"
-
-  val temps = Extraction.locateTemperatures(2015, stationsFile, tempsFile)
-  val avgs = Extraction.locationYearlyAverageRecords(temps)
-
-
-
-  Extraction.stop()
-
-  val image = Visualization.visualize(avgs, values)
-
-  Visualization.outputImage(image, new java.io.File("target/mapa.png"))
-*/
-
-  def processTile(
-                   yearlyTemperatures: String,
-                   stationsFile: String,
-                   colorScale: Iterable[(Temperature, Color)],
-                   tile: Tile): Unit = {
-  }
-
   val dir = new File("src/main/resources").listFiles()
     .map(file => file.toString)
     .map(file => file.split("/"))
@@ -60,8 +41,23 @@ object Main extends App {
     (x, y) <- List((0, 0), (0, 1), (1, 0), (1, 1))
   } yield processTile(file, stationsFile, colorScale, Tile(x, y, zoom))
 
+  Extraction.stop()
 
+  def processTile(temperaturesFile: String,
+                  stationsFile: String,
+                  colorScale: Iterable[(Temperature, Color)],
+                  tile: Tile): Unit = {
+
+    val year: Int = temperaturesFile.substring(1, temperaturesFile.length - 4).toInt
+
+    val temperatures: Iterable[(LocalDate, Location, Temperature)] =
+      Extraction.locateTemperatures(year, stationsFile, temperaturesFile)
+
+    val avgTemps: Iterable[(Location, Temperature)] =
+      Extraction.locationYearlyAverageRecords(temperatures)
+
+    def image: Image = Interaction.tile(avgTemps, colorScale, tile)
+
+    Interaction.writeImage(year, tile, image)
+  }
 }
-
-
-//.listFiles.filter(_.getName.endsWith(".csv"))
