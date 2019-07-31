@@ -2,33 +2,15 @@ package observatory
 
 import java.time.LocalDate
 
-import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.expressions.UserDefinedFunction
-import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.ScalaReflection.Schema
 import org.apache.spark.sql.types.{DoubleType, StructField, StructType}
+
 
 /**
   * 1st milestone: data extraction
   */
 object Extraction {
-  @transient lazy val conf: SparkConf = new SparkConf()
-    .setMaster("local[*]")
-    .setAppName("WeatherMonitor")
-
-  @transient val spark: SparkSession =
-    SparkSession
-      .builder
-      .master("local[*]")
-      .appName("WeatherMonitor")
-      .getOrCreate()
-
-  @transient val sc: SparkContext = spark.sparkContext
-  sc.setLogLevel("WARN")
-
-  Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
-
   // For implicit conversions, enables jumping over DF, DS and RDD APIs seamlessly.
   import spark.implicits._
 

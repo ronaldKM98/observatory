@@ -1,7 +1,6 @@
 package observatory
 
 import java.io.File
-import java.nio.file.Paths
 import java.time.LocalDate
 
 import com.sksamuel.scrimage.Image

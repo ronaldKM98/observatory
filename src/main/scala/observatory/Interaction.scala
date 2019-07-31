@@ -11,6 +11,9 @@ import scala.collection.parallel.immutable.ParSeq
   */
 object Interaction {
 
+  // For implicit conversions, enables jumping over DF, DS and RDD APIs seamlessly.
+  import spark.implicits._
+
   /**
     * @param tile Tile coordinates
     * @return The latitude and longitude of the top-left corner of the tile,
@@ -25,6 +28,7 @@ object Interaction {
     * @param colors Color scale
     * @param tile Tile coordinates
     * @return A 256×256 image showing the contents of the given tile
+    *         TODO : Implement using spark + akka
     */
   def tile(temperatures: Iterable[(Location, Temperature)],
            colors: Iterable[(Temperature, Color)], tile: Tile): Image = {
@@ -74,6 +78,4 @@ object Interaction {
 
     image output file
   }
-
-
 }

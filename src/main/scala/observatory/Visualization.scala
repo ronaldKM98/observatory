@@ -12,10 +12,14 @@ import scala.language.postfixOps
   */
 object Visualization {
 
+  // For implicit conversions, enables jumping over DF, DS and RDD APIs seamlessly.
+  import spark.implicits._
+
   /**
     * @param temperatures Known temperatures: pairs containing a location and the temperature at this location
     * @param location Location where to predict the temperature
     * @return The predicted temperature at `location`
+    *         *         TODO : Implement using spark + akka
     */
   def predictTemperature(temperatures: Iterable[(Location, Temperature)], location: Location): Temperature = {
     val p = 2.5
@@ -64,6 +68,7 @@ object Visualization {
     * @param temperatures Known temperatures
     * @param colors Color scale
     * @return A 360×180 image where each pixel shows the predicted temperature at its location
+    *         *         TODO : Implement using spark + akka
     */
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
     val pixels: Array[Pixel] = (for {
