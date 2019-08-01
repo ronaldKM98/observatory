@@ -4,7 +4,6 @@ import java.awt.image.BufferedImage
 
 import com.sksamuel.scrimage.{Image, Pixel}
 
-import scala.collection.parallel.immutable.ParSeq
 
 /**
   * 3rd milestone: interactive visualization
@@ -32,8 +31,7 @@ object Interaction {
     */
   def tile(temperatures: Iterable[(Location, Temperature)],
            colors: Iterable[(Temperature, Color)], tile: Tile): Image = {
-    val width = 256
-    val height = 256
+    val width, height = 256
     val alpha = 127
     val x_0 = tile.x * width
     val y_0 = tile.y * height
@@ -61,7 +59,16 @@ object Interaction {
     *                      y coordinates of the tile and the data to build the image from
     */
   def generateTiles[Data](yearlyData: Iterable[(Year, Data)], generateImage: (Year, Tile, Data) => Unit): Unit = {
-    ???
+    val zoomLevels = 0 to 3
+    for {
+      (year, data) <- yearlyData.toStream.par
+      zoom <- zoomLevels.toStream.par
+      tiles = for {
+        y <- 0 until Math.pow(2, zoom).toInt
+        x <- 0 until Math.pow(2, zoom).toInt
+      } yield (x, y)
+      (x, y) <- tiles.toStream.par
+    } yield generateImage(year, Tile(x, y, zoom), data)
   }
 
   /**
@@ -74,8 +81,15 @@ object Interaction {
     val file: java.io.File =
       new java.io.File(s"target/temperatures/$year/${tile.zoom}/${tile.x}-${tile.y}.png")
 
-    if (!file.getParentFile.exists) file.getParentFile.mkdirs
+    if (! file.getParentFile.exists) file.getParentFile.mkdirs
 
     image output file
+  }
+
+  def checkFile(year: Year, tile: Tile): Boolean = {
+    val file: java.io.File =
+      new java.io.File(s"target/temperatures/$year/${tile.zoom}/${tile.x}-${tile.y}.png")
+
+    ! file.exists
   }
 }

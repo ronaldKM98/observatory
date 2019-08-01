@@ -7,6 +7,10 @@ import com.sksamuel.scrimage.{Image, Pixel}
 import scala.annotation.tailrec
 import scala.language.postfixOps
 
+import akka.stream._
+import akka.stream.scaladsl._
+
+
 /**
   * 2nd milestone: basic visualization
   */
@@ -22,10 +26,10 @@ object Visualization {
     *         *         TODO : Implement using spark + akka
     */
   def predictTemperature(temperatures: Iterable[(Location, Temperature)], location: Location): Temperature = {
-    val p = 2.5
+    val p = 2.5 // Hacer 6
     val errorRange = 1000 // meters
 
-    val weights = temperatures.par.map {
+    val weights = temperatures.toStream.par.map {
       case (loc, _) =>
         val d = distance(loc, location)
         if (d > errorRange) weight(p)(d) else 1.0
@@ -33,7 +37,7 @@ object Visualization {
 
     val sumOfWeights = weights.sum
 
-    val sumOfWeightedTemps = temperatures.par.zip(weights).map {
+    val sumOfWeightedTemps = temperatures.toStream.par.zip(weights).map {
       case ((loc, temp), weight) =>
         val d = distance(loc, location)
         if (d > errorRange) weight * temp else temp

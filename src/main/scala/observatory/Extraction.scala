@@ -4,8 +4,7 @@ import java.time.LocalDate
 
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql._
-import org.apache.spark.sql.types.{DoubleType, StructField, StructType}
-
+import org.apache.spark.sql.types.StructType
 
 /**
   * 1st milestone: data extraction
