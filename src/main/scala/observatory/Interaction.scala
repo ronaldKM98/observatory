@@ -2,7 +2,7 @@ package observatory
 
 import java.awt.image.BufferedImage
 
-import com.sksamuel.scrimage.{Image, Pixel}
+import com.sksamuel.scrimage.{Image, Pixel, ScaleMethod}
 import org.apache.spark.rdd.RDD
 
 
@@ -37,11 +37,10 @@ object Interaction {
 
   def tile(temperatures: RDD[(Location, Temperature)], colors: Iterable[(Temperature, Color)], tile: Tile): Image = {
     // Most used RDD
-    temperatures.cache()
+    val temps: Iterable[(Location, Temperature)] = temperatures.collect()
 
-    //val temps: Iterable[(Location, Temperature)] = temperatures.collect()
-
-    val width, height = 256
+    val scale = 2
+    val width, height = 256 / scale
     val alpha = 127
     val x_0 = tile.x * width
     val y_0 = tile.y * height
@@ -54,11 +53,11 @@ object Interaction {
     val pixels: Array[Pixel] = (for {
       (j, k) <- stream
       loc = Tile(j, k, tile.zoom + 8).toLocation
-      temp = Visualization.predictTemperature(temperatures, loc)
+      temp = Visualization.predictTemperature(temps, loc)
       color = Visualization.interpolateColor(colors, temp)
     } yield Pixel(color.red, color.green, color.blue, alpha)).toArray
 
-    Image(width, height, pixels, BufferedImage.TYPE_INT_RGB)
+    Image(width, height, pixels, BufferedImage.TYPE_INT_RGB).scale(scale, ScaleMethod.Bilinear)
   }
 
   /**
