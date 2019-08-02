@@ -4,6 +4,7 @@ import java.io.File
 import java.time.LocalDate
 
 import com.sksamuel.scrimage.Image
+import org.apache.spark.rdd.RDD
 
 object Main extends App {
 
@@ -21,17 +22,16 @@ object Main extends App {
     .map("/" + _)
 
   val intersection: Array[String] = dir.intersect(years)
-  val yearlyData: Iterable[(Year, Iterable[(Location, Temperature)])] = calcAverages(stationsFile, intersection.toList)
+  val yearlyData: Iterable[(Year, RDD[(Location, Temperature)])] = calcAverages(stationsFile, intersection.toList)
 
-  Extraction.stop()
+  Interaction.generateTiles(yearlyData, generateRDDImage)
 
-  Interaction.generateTiles(yearlyData, generateImage)
+  spark.stop()
 
   // end main
 
-
   // Functions
-  def generateImage(year: Year, tile: Tile, data: Iterable[(Location, Temperature)]): Unit = {
+  def generateRDDImage(year: Year, tile: Tile, data: RDD[(Location, Temperature)]): Unit = {
     val colorScale: Iterable[(Temperature, Color)] = Iterable(
       (60,  Color(255, 255, 255)),
       (32,  Color(255, 0, 0)),
@@ -47,15 +47,15 @@ object Main extends App {
   }
 
   def calcAverages(stationsFile: String, temperaturesFiles: List[String]):
-                                                                Iterable[(Year, Iterable[(Location, Temperature)])] = {
+                                                                Iterable[(Year, RDD[(Location, Temperature)])] = {
     temperaturesFiles.map { temperaturesFile =>
       val year: Int = temperaturesFile.substring(1, temperaturesFile.length - 4).toInt
 
-      val temperatures: Iterable[(LocalDate, Location, Temperature)] =
-        Extraction.locateTemperatures(year, stationsFile, temperaturesFile)
+      val temperatures: RDD[(LocalDate, Location, Temperature)] =
+        Extraction.sparkLocateTemperatures(year, stationsFile, temperaturesFile)
 
-      val avgTemps: Iterable[(Location, Temperature)] =
-        Extraction.locationYearlyAverageRecords(temperatures)
+      val avgTemps: RDD[(Location, Temperature)] =
+        Extraction.sparkAverageRecords(temperatures)
 
       (year, avgTemps)
     }

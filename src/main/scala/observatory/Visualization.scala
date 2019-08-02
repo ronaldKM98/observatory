@@ -6,9 +6,7 @@ import com.sksamuel.scrimage.{Image, Pixel}
 
 import scala.annotation.tailrec
 import scala.language.postfixOps
-
-import akka.stream._
-import akka.stream.scaladsl._
+import org.apache.spark.rdd.RDD
 
 
 /**
@@ -46,6 +44,27 @@ object Visualization {
     sumOfWeightedTemps / sumOfWeights
   }
 
+  def predictTemperature(temperatures: RDD[(Location, Temperature)], location: Location): Temperature = {
+    val p = 2.5 // Hacer 6
+    val errorRange = 1000 // meters
+
+    val weights = temperatures.map {
+      case(loc, _) =>
+        val d = distance(loc, location)
+        if (d > errorRange) weight(p)(d) else 1.0
+    }
+
+    val sumOfWeights = weights.sum()
+
+    val sumOfWeightedTemps = temperatures.zip(weights).map {
+      case ((loc, temp), weight) =>
+        val d = distance(loc, location)
+        if (d > errorRange) weight * temp else temp
+    }.sum()
+
+    sumOfWeightedTemps / sumOfWeights
+  }
+
   /**
     * @param points Pairs containing a value and its associated color
     * @param value The value to interpolate
@@ -75,14 +94,18 @@ object Visualization {
     *         *         TODO : Implement using spark + akka
     */
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
+    val width = 360
+    val height = 180
+    val alpha = 127
+
     val pixels: Array[Pixel] = (for {
-      i <- Stream.range(0, 360 * 180)
-      loc = index2Location(i, 360)
+      i <- Stream.range(0, width * height).par
+      loc = index2Location(i, width)
       temp = predictTemperature(temperatures, loc)
       color = interpolateColor(colors, temp)
-    } yield Pixel(color.red, color.green, color.blue, 255)).toArray
+    } yield Pixel(color.red, color.green, color.blue, alpha)).toArray
 
-    Image(360, 180, pixels, BufferedImage.TYPE_INT_RGB)
+    Image(width, height, pixels, BufferedImage.TYPE_INT_RGB)
   }
 
   /**

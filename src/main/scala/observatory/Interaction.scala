@@ -3,6 +3,7 @@ package observatory
 import java.awt.image.BufferedImage
 
 import com.sksamuel.scrimage.{Image, Pixel}
+import org.apache.spark.rdd.RDD
 
 
 /**
@@ -31,6 +32,15 @@ object Interaction {
     */
   def tile(temperatures: Iterable[(Location, Temperature)],
            colors: Iterable[(Temperature, Color)], tile: Tile): Image = {
+    Interaction.tile(sc.parallelize(temperatures.toSeq), colors, tile)
+  }
+
+  def tile(temperatures: RDD[(Location, Temperature)], colors: Iterable[(Temperature, Color)], tile: Tile): Image = {
+    // Most used RDD
+    temperatures.cache()
+
+    //val temps: Iterable[(Location, Temperature)] = temperatures.collect()
+
     val width, height = 256
     val alpha = 127
     val x_0 = tile.x * width

@@ -2,6 +2,7 @@ package observatory
 
 import java.time.LocalDate
 
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql._
 import org.apache.spark.sql.types.StructType
@@ -29,6 +30,11 @@ object Extraction {
     */
   def locateTemperatures(year: Year, stationsFile: String, temperaturesFile: String):
                                                                         Iterable[(LocalDate, Location, Temperature)] = {
+    sparkLocateTemperatures(year, stationsFile, temperaturesFile).collect().toSeq
+  }
+
+  def sparkLocateTemperatures(year: Year, stationsFile: String, temperaturesFile: String):
+                                                                            RDD[(LocalDate, Location, Temperature)] = {
     val stationSchema: StructType = Encoders.product[RawStationRecord].schema
     val temperatureSchema: StructType = Encoders.product[RawTemperatureRecord].schema
 
@@ -44,9 +50,9 @@ object Extraction {
 
     val joint: Dataset[(RawStationRecord, RawTemperatureRecord)] =
       stations.joinWith(temperatures, stations("stn") === temperatures("stn") &&
-                                      stations("wban") === temperatures("wban"))
+        stations("wban") === temperatures("wban"))
 
-    joint.collect().map(x => helper(year)(x._1, x._2))
+    joint.rdd.map(x => helper(year)(x._1, x._2))
   }
 
   /**
@@ -55,13 +61,17 @@ object Extraction {
     */
   def locationYearlyAverageRecords(records: Iterable[(LocalDate, Location, Temperature)]):
                                                                                   Iterable[(Location, Temperature)] = {
+    sparkAverageRecords(sc.parallelize(records.toSeq)).collect().toSeq
+  }
+
+  def sparkAverageRecords(records: RDD[(LocalDate, Location, Temperature)]): RDD[(Location, Temperature)] = {
     val ds: Dataset[(Location, Temperature)] =
-      spark.createDataset(records.map(record => (record._2, record._3)).toSeq)
+      spark.createDataset(records.map(record => (record._2, record._3)))
 
     val avg: DataFrame =
       ds.repartition(20).groupBy("_1").avg("_2")
 
-    avg.as[(Location, Temperature)].collect()
+    avg.as[(Location, Temperature)].rdd
   }
 
   def readFile(path: String, schema: StructType): DataFrame = {
@@ -94,6 +104,4 @@ object Extraction {
   }
 
   def fahrenheitToCelsius(f: Temperature): Temperature = double2Double((f - 32) / 1.80000)
-
-  def stop(): Unit = spark.stop()
 }
