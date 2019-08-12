@@ -42,8 +42,34 @@ object Interaction {
     val scale = 2
     val width, height = 256 / scale
     val alpha = 127
+
     val x_0 = tile.x * width
     val y_0 = tile.y * height
+
+    /**val pixels = (0 until width * height).par.map(index => {
+      val (x_pos, y_pos) = ((index % width).toDouble / width + tile.x, (index / width).toDouble / height + tile.y)
+      val location = {
+        val n = 1 << tile.zoom
+        val latRad = math.atan(math.sinh(math.Pi * (1.0 - 2.0 * y_pos / n)))
+        Location(latRad * 180.0 / math.Pi, x_pos * 360.0 / n - 180.0)
+      }
+      val predTemp = Visualization.predictTemperature(temps, location)
+      val predColor = Visualization.interpolateColor(colors, predTemp)
+
+      Pixel.apply(predColor.red, predColor.green, predColor.blue, alpha)
+    }).toArray*/
+
+    /**val pixels = (for {
+      i <- (0 until width * height).par
+      (x, y) = ((i % width).toDouble / width + tile.x, (i / width).toDouble / height + tile.y)
+      location = {
+        val n = 1 << tile.zoom
+        val latRad = math.atan(math.sinh(math.Pi * (1.0 - 2.0 * y / n)))
+        Location(latRad * 180.0 / math.Pi, x * width / n - height)
+      }
+      temp = Visualization.predictTemperature(temperatures, location)
+      color = Visualization.interpolateColor(colors, temp)
+    } yield Pixel(color.red, color.green, color.blue, alpha)).toArray*/
 
     val stream = (for {
       k <- y_0 until y_0 + height
@@ -57,7 +83,7 @@ object Interaction {
       color = Visualization.interpolateColor(colors, temp)
     } yield Pixel(color.red, color.green, color.blue, alpha)).toArray
 
-    Image(width, height, pixels, BufferedImage.TYPE_INT_RGB).scale(scale, ScaleMethod.Bilinear)
+    Image(width, height, pixels, BufferedImage.TYPE_INT_RGB).scaleTo(256, 256, ScaleMethod.Bilinear)
   }
 
   /**
