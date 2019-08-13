@@ -1,7 +1,5 @@
 package observatory
 
-import java.awt.image.BufferedImage
-
 import com.sksamuel.scrimage.{Image, Pixel, ScaleMethod}
 import org.apache.spark.rdd.RDD
 
@@ -83,7 +81,7 @@ object Interaction {
       color = Visualization.interpolateColor(colors, temp)
     } yield Pixel(color.red, color.green, color.blue, alpha)).toArray
 
-    Image(width, height, pixels, BufferedImage.TYPE_INT_RGB).scaleTo(256, 256, ScaleMethod.Bilinear)
+    Image(width, height, pixels, 1).scaleTo(256, 256, ScaleMethod.Bilinear)
   }
 
   /**

@@ -2,6 +2,8 @@ package observatory
 
 import org.apache.spark.rdd.RDD
 
+import scala.collection.parallel.immutable.ParMap
+
 /**
   * 4th milestone: value-added information
   */
@@ -13,32 +15,33 @@ object Manipulation {
     *         returns the predicted temperature at this location
     */
   def makeGrid(temperatures: Iterable[(Location, Temperature)]): GridLocation => Temperature = {
-    makeGridRDD(sc.parallelize(temperatures.toSeq))
-  }
+    val keys = for {
+      lat <- (-89 to 90).reverse
+      lon <- -180 to 179
+    } yield GridLocation(lat, lon)
 
-  def makeGridRDD(temperatures: RDD[(Location, Temperature)]): GridLocation => Temperature = {
-    grid: GridLocation => Visualization.predictTemperature(temperatures, Location(grid.lat, grid.lon))
+    val map: ParMap[GridLocation, Temperature] =
+      keys.toStream.par.map { gridLoc =>
+        (gridLoc, Visualization.predictTemperature(temperatures, Location(gridLoc.lat, gridLoc.lon)))
+      }.toMap
+
+    grid: GridLocation => map.getOrElse(grid, 0)
   }
 
   /**
     * @param temperaturess Sequence of known temperatures over the years (each element of the collection
     *                      is a collection of pairs of location and temperature)
     * @return A function that, given a latitude and a longitude, returns the average temperature at this location
+    *         TODO FIX THIS METHOD
     */
   def average(temperaturess: Iterable[Iterable[(Location, Temperature)]]): GridLocation => Temperature = {
-    averageRDD(temperaturess.map(i => sc.parallelize(i.toSeq)))
-  }
 
-  def averageRDD(temperaturess: Iterable[RDD[(Location, Temperature)]]): GridLocation => Temperature = {
-
-    def f (temperaturess: Iterable[RDD[(Location, Temperature)]])(grid: GridLocation): Temperature = {
-      temperaturess.map {
-        _.filter {
+    def f (temperaturess: Iterable[Iterable[(Location, Temperature)]])(grid: GridLocation): Temperature = {
+      temperaturess.map { temps =>
+        temps.filter {
           x => x._1 == Location(grid.lat, grid.lon)
-        }
-      }.map(_.values)
-        .map(temps => temps.sum() / temps.count())
-        .sum
+        }.map(_._2)
+      }.map(temps => temps.sum / temps.size).sum
     }
 
     f(temperaturess)
@@ -51,22 +54,16 @@ object Manipulation {
     */
   def deviation(temperatures: Iterable[(Location, Temperature)], normals: GridLocation => Temperature):
                                                                                         GridLocation => Temperature = {
-    deviationRDD(sc.parallelize(temperatures.toSeq), normals)
-  }
-
-
-  def deviationRDD(temperatures: RDD[(Location, Temperature)], normals: GridLocation => Temperature):
-                                                                                        GridLocation => Temperature = {
-    def deviations: RDD[(Location, Temperature)] =
-      temperatures.map {
+    val deviations: Iterable[(Location, Temperature)] =
+      temperatures.toStream.par.map {
         case(loc, temp) =>
           (loc, diff(temp, normals(GridLocation(loc.lat.toInt, loc.lon.toInt))))
-      }
+      }.toVector
 
-    makeGridRDD(deviations)
+    makeGrid(deviations)
   }
 
   def diff(current: observatory.Temperature, normal: observatory.Temperature): Temperature = {
-    math.abs(current - normal)
+    current - normal
   }
 }

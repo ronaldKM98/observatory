@@ -1,12 +1,9 @@
 package observatory
 
-import java.awt.image.BufferedImage
-
 import com.sksamuel.scrimage.{Image, Pixel}
 
 import scala.annotation.tailrec
 import scala.language.postfixOps
-import org.apache.spark.rdd.RDD
 
 
 /**
@@ -40,27 +37,6 @@ object Visualization {
         val d = distance(loc, location)
         if (d > errorRange) weight * temp else temp
     }.sum
-
-    sumOfWeightedTemps / sumOfWeights
-  }
-
-  def predictTemperature(temperatures: RDD[(Location, Temperature)], location: Location): Temperature = {
-    val p = 2.5 // Hacer 6
-    val errorRange = 1000 // meters
-
-    val weights = temperatures.map {
-      case(loc, _) =>
-        val d = distance(loc, location)
-        if (d > errorRange) weight(p)(d) else 1.0
-    }
-
-    val sumOfWeights = weights.sum()
-
-    val sumOfWeightedTemps = temperatures.zip(weights).map {
-      case ((loc, temp), weight) =>
-        val d = distance(loc, location)
-        if (d > errorRange) weight * temp else temp
-    }.sum()
 
     sumOfWeightedTemps / sumOfWeights
   }
@@ -105,7 +81,7 @@ object Visualization {
       color = interpolateColor(colors, temp)
     } yield Pixel(color.red, color.green, color.blue, alpha)).toArray
 
-    Image(width, height, pixels, BufferedImage.TYPE_INT_RGB)
+    Image(width, height, pixels, 1)
   }
 
   /**
