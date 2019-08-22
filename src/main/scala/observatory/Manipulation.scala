@@ -6,6 +6,7 @@ import scala.collection.parallel.immutable.ParMap
 
 /**
   * 4th milestone: value-added information
+  * TODO: Why is this code breaking memory constraints ?
   */
 object Manipulation {
 
@@ -32,19 +33,16 @@ object Manipulation {
     * @param temperaturess Sequence of known temperatures over the years (each element of the collection
     *                      is a collection of pairs of location and temperature)
     * @return A function that, given a latitude and a longitude, returns the average temperature at this location
-    *         TODO FIX THIS METHOD
     */
   def average(temperaturess: Iterable[Iterable[(Location, Temperature)]]): GridLocation => Temperature = {
+    val groupedByLocation: Map[Location, Iterable[(Location, Temperature)]] = temperaturess.flatten.groupBy(_._1)
 
-    def f (temperaturess: Iterable[Iterable[(Location, Temperature)]])(grid: GridLocation): Temperature = {
-      temperaturess.map { temps =>
-        temps.filter {
-          x => x._1 == Location(grid.lat, grid.lon)
-        }.map(_._2)
-      }.map(temps => temps.sum / temps.size).sum
-    }
+    val locationAvgs: Iterable[(Location, Temperature)] =
+      groupedByLocation.toStream.par.map{ case(loc, it) =>
+        (loc, it.foldLeft(0.0d)((_, temp) => temp._2))
+      }.toVector
 
-    f(temperaturess)
+    makeGrid(locationAvgs)
   }
 
   /**
