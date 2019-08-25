@@ -14,7 +14,7 @@ object Main extends App {
   // begin main
   val stationsFile = "/stations.csv"
   val initialYear = 1975
-  val lastYear = 2015
+  val lastYear = 1976
   val years: Array[String] = (initialYear to lastYear).map(_.toString).map("/" + _ + ".csv").toArray
 
   val dir: Array[String] = new File("src/main/resources").listFiles()
@@ -26,8 +26,8 @@ object Main extends App {
   val intersection: Array[String] = dir.intersect(years)
   val yearlyData: Iterable[(Year, RDD[(Location, Temperature)])] = calcAverages(stationsFile, intersection.toList)
 
-  // this.generateDeviations(yearlyData)
-  this.generateTemperatures(yearlyData)
+  this.generateDeviations(yearlyData)
+  //this.generateTemperatures(yearlyData)
 
   spark.stop()
 

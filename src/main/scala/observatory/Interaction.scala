@@ -37,7 +37,7 @@ object Interaction {
     // Most used RDD
     val temps: Iterable[(Location, Temperature)] = temperatures.collect()
 
-    val scale = 2
+    val scale = 1
     val width, height = 256 / scale
     val alpha = 127
 
