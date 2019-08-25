@@ -39,7 +39,7 @@ object Manipulation {
 
     val locationAvgs: Iterable[(Location, Temperature)] =
       groupedByLocation.toStream.par.map{ case(loc, it) =>
-        (loc, it.foldLeft(0.0d)((_, temp) => temp._2))
+        (loc, it.map(_._2).sum / it.size)
       }.toVector
 
     makeGrid(locationAvgs)

@@ -1,7 +1,6 @@
 package observatory
 
 import com.sksamuel.scrimage.{Image, Pixel, ScaleMethod}
-import observatory.Visualization.{index2Location, interpolateColor, predictTemperature}
 
 /**
   * 5th milestone: value-added information visualization
@@ -55,7 +54,25 @@ object Visualization2 {
   }
 
   /**
-    * Helper methods for visualizeGrid
+    * @param deviations Grid to visualize with its respective year
+    * @param colors Color scale to use
+    * @return Unit. Writes the image corresponding to each tile to the file system
+    */
+  def generateTiles(deviations: (Year, GridLocation => Temperature), colors: Iterable[(Temperature, Color)]): Unit = {
+    val zoomLevels = 0 to 3
+    for {
+      zoom <- zoomLevels.toStream.par
+      tiles = for {
+        y <- 0 until Math.pow(2, zoom).toInt
+        x <- 0 until Math.pow(2, zoom).toInt
+      } yield (x, y)
+      (x, y) <- tiles.toStream.par
+      image = visualizeGrid(deviations._2, colors, Tile(x, y, zoom))
+    } yield writeImage(deviations._1, Tile(x, y, zoom), image)
+  }
+
+  /**
+    * Helper functions for visualizeGrid
     */
   def interpolate(grid: GridLocation => Temperature, location: Location): Temperature = {
     val lat = location.lat.toInt
@@ -67,5 +84,17 @@ object Visualization2 {
     val cell = CellPoint(location.lon - lon, location.lat - lat)
 
     bilinearInterpolation(cell, d00, d01, d10, d11)
+  }
+
+  /**
+    * Helper functions for generateTiles
+    */
+  def writeImage(year: Year, tile: Tile, image: Image): Unit = {
+    val file: java.io.File =
+      new java.io.File(s"target/deviations/$year/${tile.zoom}/${tile.x}-${tile.y}.png")
+
+    if (! file.getParentFile.exists) file.getParentFile.mkdirs
+
+    image output file
   }
 }
