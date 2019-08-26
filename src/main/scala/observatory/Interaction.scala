@@ -56,7 +56,7 @@ object Interaction {
       color = Visualization.interpolateColor(colors, temp)
     } yield Pixel(color.red, color.green, color.blue, alpha)).toArray
 
-    Image(width, height, pixels, 1).scaleTo(256, 256, ScaleMethod.Bilinear)
+    Image(width, height, pixels, 1)
   }
 
   /**

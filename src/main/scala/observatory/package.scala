@@ -14,7 +14,6 @@ package object observatory {
   def parsePath(resource: String): String =
     Paths.get(getClass.getResource(resource).toURI).toString
 
-
   // Spark config
   @transient lazy val conf: SparkConf = new SparkConf()
     .setMaster("local[*]")
@@ -31,6 +30,4 @@ package object observatory {
   sc.setLogLevel("WARN")
 
   Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
-
-
 }

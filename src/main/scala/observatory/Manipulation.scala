@@ -1,6 +1,7 @@
 package observatory
 
 
+import scala.collection.mutable
 import scala.collection.parallel.immutable.ParMap
 
 /**
@@ -16,8 +17,8 @@ object Manipulation {
     */
   def makeGrid(temperatures: Iterable[(Location, Temperature)]): GridLocation => Temperature = {
     val keys = for {
-      lat <- (-89 to 90).reverse
-      lon <- -180 to 179
+      lat <- -89 to 90 by 1
+      lon <- -180 to 179 by 1
     } yield GridLocation(lat, lon)
 
     val map: ParMap[GridLocation, Temperature] =
