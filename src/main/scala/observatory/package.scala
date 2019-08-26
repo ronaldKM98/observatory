@@ -16,13 +16,11 @@ package object observatory {
 
   // Spark config
   @transient lazy val conf: SparkConf = new SparkConf()
-    .setMaster("local[*]")
     .setAppName("WeatherMonitor")
 
   @transient val spark: SparkSession =
     SparkSession
       .builder
-      .master("local[*]")
       .appName("WeatherMonitor")
       .getOrCreate()
 

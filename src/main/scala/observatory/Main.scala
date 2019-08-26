@@ -12,7 +12,7 @@ import scala.collection.parallel.ParSeq
 object Main extends App {
 
   // begin main
-  val stationsFile = "/stations.csv"
+  val stationsFile = "s3://ronald-observatory/resources/stations.csv"
   val initialYear = 1975
   val lastYear = 2015
   val years: Array[String] = (initialYear to lastYear).map(_.toString).map("/" + _ + ".csv").toArray
@@ -23,8 +23,10 @@ object Main extends App {
     .map(file => file.last)
     .map("/" + _)
 
+  val dir_2: Array[String] = years.map("s3://ronald-observatory/resources" + _)
+
   val intersection: Array[String] = dir.intersect(years)
-  val yearlyData: Iterable[(Year, RDD[(Location, Temperature)])] = calcAverages(stationsFile, intersection.toList)
+  val yearlyData: Iterable[(Year, RDD[(Location, Temperature)])] = calcAverages(stationsFile, dir_2.toList)
 
   //this.generateDeviations(yearlyData)
   this.generateTemperatures(yearlyData)
@@ -85,7 +87,7 @@ object Main extends App {
   def calcAverages(stationsFile: String, temperaturesFiles: List[String]):
                                                                 Iterable[(Year, RDD[(Location, Temperature)])] = {
     temperaturesFiles.map { temperaturesFile =>
-      val year: Int = temperaturesFile.substring(1, temperaturesFile.length - 4).toInt
+      val year: Int = temperaturesFile.substring(temperaturesFile.length - 8, temperaturesFile.length - 4).toInt
 
       val temperatures: RDD[(LocalDate, Location, Temperature)] =
         Extraction.sparkLocateTemperatures(year, stationsFile, temperaturesFile)

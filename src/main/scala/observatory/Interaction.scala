@@ -87,17 +87,10 @@ object Interaction {
     */
   def writeImage(year: Year, tile: Tile, image: Image): Unit = {
     val file: java.io.File =
-      new java.io.File(s"target/temperatures/$year/${tile.zoom}/${tile.x}-${tile.y}.png")
+      new java.io.File(s"s3://temperatures/$year/${tile.zoom}/${tile.x}-${tile.y}.png")
 
     if (! file.getParentFile.exists) file.getParentFile.mkdirs
 
     image output file
-  }
-
-  def checkFile(year: Year, tile: Tile): Boolean = {
-    val file: java.io.File =
-      new java.io.File(s"target/temperatures/$year/${tile.zoom}/${tile.x}-${tile.y}.png")
-
-    ! file.exists
   }
 }

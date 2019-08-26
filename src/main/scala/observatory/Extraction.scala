@@ -81,7 +81,7 @@ object Extraction {
       .option(key = "encoding", value = "UTF-8")
       .option(key = "sep", value = ",")
       .schema(schema)
-      .csv(parsePath(path))
+      .csv(path) //Add parsePath for local. No parsePath for S3 or HDFS
       .na.fill(0, Seq("stn", "wban"))
       .withColumn("id", TupleUDFs.toTuple2[Int, Int].apply($"stn", $"wban"))
       .na.drop()
